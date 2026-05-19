@@ -1,3 +1,4 @@
+import sys
 from tkinter import *
 from PIL import Image, ImageTk, ImageFilter, ImageOps
 import time
@@ -75,6 +76,13 @@ try:
     cap = cv2.VideoCapture(0)
     # cap = cv2.VideoCapture("http://localhost:8090/?action=stream")
     
+    ret, frame = cap.read()
+
+    if not ret or frame is None:
+        print("카메라 연결 실패")
+        lmain.after(100, show_frame)
+        sys.exit()
+
     show_frame()
     root.mainloop()           
 except KeyboardInterrupt:
