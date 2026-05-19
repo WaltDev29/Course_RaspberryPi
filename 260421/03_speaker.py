@@ -9,7 +9,7 @@ os.environ["AUDIODEV"] = "hw:4,0"
 
 # 2. 믹서 사전 설정 (스피커가 요구하는 16비트로 강제 고정)
 # frequency: 44100Hz, size: -16 (Signed 16-bit), channels: 2
-pygame.mixer.pre_init(44100, -16, 2, 512)
+pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.init()
 
 # 3. 오디오 파일 경로 지정
