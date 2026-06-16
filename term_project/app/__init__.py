@@ -1,7 +1,6 @@
-import sys
-from PyQt5.QtWidgets import QApplication
+import tkinter as tk
+import queue
 
-# 각 하드웨어 및 로직 모듈 임포트
 from .hw_motor import MotorController
 from .hw_switch import SwitchController
 from .hw_led import LEDController
@@ -11,14 +10,12 @@ from .player import MusicPlayer
 from .gui import MusicPlayerGUI
 
 def create_app():
-    """모든 모듈을 초기화하고 이벤트를 바인딩한 후 애플리케이션 객체를 반환합니다."""
+    """모든 모듈을 초기화하고 이벤트를 바인딩한 후 메인 윈도우 객체를 반환합니다."""
     
-    # 1. PyQt Application 객체 확보
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
+    # 1. tkinter Root 객체 생성
+    root = tk.Tk()
         
-    # 2. 싱글톤 객체들 초기화 (최초 1회 생성됨)
+    # 2. 싱글톤 객체들 초기화
     motor = MotorController()
     switch = SwitchController()
     led = LEDController()
@@ -27,40 +24,50 @@ def create_app():
     player = MusicPlayer()
     
     # GUI 인스턴스 생성 및 플레이어 주입
-    gui = MusicPlayerGUI(player)
+    gui = MusicPlayerGUI(root, player)
     
-    # 3. 하드웨어 입력(스위치, 가변저항)을 GUI 시그널에 바인딩
-    # 스레드 충돌을 피하기 위해 센서 콜백에서는 GUI의 pyqtSignal.emit()만 호출함
-    switch.register_callback(switch.SW1_PIN, lambda: gui.sig_toggle_play.emit())
-    switch.register_callback(switch.SW2_PIN, lambda: gui.sig_prev.emit())
-    switch.register_callback(switch.SW3_PIN, lambda: gui.sig_next.emit())
-    switch.register_callback(switch.SW4_PIN, lambda: gui.sig_shuffle.emit())
+    # 3. 하드웨어 스위치 입력 처리 (tkinter 스레드 충돌 방지를 위해 Queue 사용)
+    event_queue = queue.Queue()
     
-    vr.register_callback(lambda vol: gui.sig_volume.emit(vol))
+    switch.register_callback(switch.SW1_PIN, lambda: event_queue.put('toggle'))
+    switch.register_callback(switch.SW2_PIN, lambda: event_queue.put('prev'))
+    switch.register_callback(switch.SW3_PIN, lambda: event_queue.put('next'))
+    switch.register_callback(switch.SW4_PIN, lambda: event_queue.put('shuffle'))
     
-    # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 로직 주입(Hook)
-    # 0.5초마다 GUI가 갱신될 때 모터, LED, LCD의 상태도 현재 플레이어 상태에 맞춰 갱신됨
-    original_update_ui = gui.update_ui
+    # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 및 큐 처리 로직 주입(Hook)
+    original_refresh_ui_state = gui.refresh_ui_state
     
-    def hooked_update_ui():
-        original_update_ui() # 기존 GUI 업데이트 (라벨, 시간 갱신)
+    def hooked_refresh_ui_state():
+        # 4-1. 큐에 쌓인 스위치 인터럽트 이벤트 메인 스레드에서 처리
+        while not event_queue.empty():
+            action = event_queue.get()
+            if action == 'toggle':
+                gui._on_toggle_play()
+            elif action == 'prev':
+                gui._on_prev()
+            elif action == 'next':
+                gui._on_next()
+            elif action == 'shuffle':
+                gui._on_shuffle()
+                
+        # 4-2. VR 볼륨 상태를 GUI 슬라이더로 동기화 (자연스럽게 플레이어에도 반영됨)
+        gui.slider_vol.set(vr.volume)
         
+        # 4-3. GUI 텍스트 및 프로그레스 갱신 (기존 함수)
+        original_refresh_ui_state()
+        
+        # 4-4. 출력 하드웨어(LED, LCD, Motor) 상태 플레이어와 동기화
         is_playing = player.is_playing
-        
-        # LED, LCD 상태 전달
         led.set_playing(is_playing)
         lcd.set_playing(is_playing)
-        
-        # 타이틀이 재생 중일 때만 스크롤되도록 전달, 정지 시에는 빈 문자열 전달됨
         lcd.set_title(player.get_current_song_name() if is_playing else "")
         
-        # 모터 제어
         if is_playing:
             motor.play()
         else:
             motor.stop()
             
     # 후킹된 함수로 교체
-    gui.update_ui = hooked_update_ui
+    gui.refresh_ui_state = hooked_refresh_ui_state
     
-    return app, gui
+    return root, gui
