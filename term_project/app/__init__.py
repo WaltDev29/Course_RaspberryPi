@@ -64,7 +64,7 @@ def create_app():
         is_playing = player.is_playing
         led.set_playing(is_playing)
         lcd.set_playing(is_playing)
-        lcd.set_title(player.get_current_song_name() if is_playing else "")
+        lcd.set_title(player.get_current_song_name())
         
         if is_playing:
             motor.play()

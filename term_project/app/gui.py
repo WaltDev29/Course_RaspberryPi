@@ -64,7 +64,7 @@ class MusicPlayerGUI:
         ttk.Label(vol_frame, text='Vol', font=('Arial', 10)).pack(side=tk.TOP, pady=5)
         # 세로 슬라이더는 from_=100, to=0으로 해야 위로 올릴수록 볼륨이 커짐
         self.slider_vol = ttk.Scale(vol_frame, from_=100, to=0, orient=tk.VERTICAL, length=140, command=self._on_gui_volume_change)
-        self.slider_vol.set(50)
+        self.slider_vol.set(0)
         self.slider_vol.pack(side=tk.TOP)
         
     def _on_toggle_play(self):

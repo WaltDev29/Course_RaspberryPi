@@ -39,9 +39,6 @@ class LCDController:
     def set_playing(self, playing):
         """재생 상태 설정"""
         self.is_playing = playing
-        if not playing:
-            # 정지 시 2번째 줄 초기화 (코멘트 요구사항 반영)
-            self.lcd.lcd_display_string("                ", 2)
             
     def _scroll_loop(self):
         """백그라운드 스크롤 루프"""
