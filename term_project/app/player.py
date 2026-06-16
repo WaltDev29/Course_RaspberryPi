@@ -57,7 +57,8 @@ class MusicPlayer:
     def get_current_song_name(self):
         if not self.playlist:
             return ""
-        return os.path.basename(self.playlist[self.current_index])
+        base_name = os.path.basename(self.playlist[self.current_index])
+        return os.path.splitext(base_name)[0]
         
     def play(self):
         if not self.playlist:
