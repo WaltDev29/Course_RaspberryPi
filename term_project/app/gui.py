@@ -2,12 +2,14 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import os
+from .gui_keypad import VirtualKeypadWindow
 
 class MusicPlayerGUI:
     def __init__(self, root, player):
         self.root = root
         self.player = player
         
+        self.after_id = None
         self.initUI()
         
         # 주기적 UI 갱신 (500ms 단위)
@@ -15,6 +17,7 @@ class MusicPlayerGUI:
         
     def initUI(self):
         self.root.title('Raspberry Pi Music Player')
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.geometry('450x250')
         self.root.configure(bg='#2b2b2b')
         
@@ -69,6 +72,8 @@ class MusicPlayerGUI:
         self.btn_shuffle.pack(side=tk.LEFT, padx=5)
         
         # --- 우측 세로 볼륨 영역 ---
+        self.btn_keypad = ttk.Button(vol_frame, text='Keypad', command=self._open_keypad_window, width=7)
+        self.btn_keypad.pack(side=tk.TOP, pady=(0, 15))
         ttk.Label(vol_frame, text='Vol', font=('Arial', 10)).pack(side=tk.TOP, pady=5)
         # 세로 슬라이더는 from_=100, to=0으로 해야 위로 올릴수록 볼륨이 커짐
         self.slider_vol = ttk.Scale(vol_frame, from_=100, to=0, orient=tk.VERTICAL, length=140, command=self._on_gui_volume_change)
@@ -103,6 +108,15 @@ class MusicPlayerGUI:
             self.player.add_and_play(filepath)
             self.refresh_ui_state()
         
+    def _open_keypad_window(self):
+        # 이미 창이 열려있는지 확인 (싱글톤 창)
+        if hasattr(self, 'keypad_app') and self.keypad_app is not None and self.keypad_app.window.winfo_exists():
+            self.keypad_app.window.lift() # 이미 열려있으면 최상단으로 끌어올림
+            return
+            
+        # 별도 파일로 분리된 VirtualKeypadWindow 클래스 인스턴스화
+        self.keypad_app = VirtualKeypadWindow(self.root)
+
     def refresh_ui_state(self):
         """UI 컴포넌트들의 상태를 현재 플레이어 상태에 맞게 갱신"""
         title = self.player.get_current_song_name()
@@ -123,5 +137,17 @@ class MusicPlayerGUI:
         
     def update_ui(self):
         """0.5초마다 주기적으로 UI 갱신 (tkinter의 after 함수 이용)"""
-        self.refresh_ui_state()
-        self.root.after(500, self.update_ui)
+        try:
+            self.refresh_ui_state()
+            self.after_id = self.root.after(500, self.update_ui)
+        except tk.TclError:
+            pass
+            
+    def on_closing(self):
+        """창을 닫을 때 예약된 타이머를 안전하게 취소하고 창을 파괴합니다."""
+        if self.after_id:
+            try:
+                self.root.after_cancel(self.after_id)
+            except Exception:
+                pass
+        self.root.destroy()
