@@ -36,8 +36,10 @@ def create_app():
     
     # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 및 큐 처리 로직 주입(Hook)
     original_refresh_ui_state = gui.refresh_ui_state
+    last_vr_volume = vr.volume
     
     def hooked_refresh_ui_state():
+        nonlocal last_vr_volume
         # 4-1. 큐에 쌓인 스위치 인터럽트 이벤트 메인 스레드에서 처리
         while not event_queue.empty():
             action = event_queue.get()
@@ -50,8 +52,10 @@ def create_app():
             elif action == 'shuffle':
                 gui._on_shuffle()
                 
-        # 4-2. VR 볼륨 상태를 GUI 슬라이더로 동기화 (자연스럽게 플레이어에도 반영됨)
-        gui.slider_vol.set(vr.volume)
+        # 4-2. VR 볼륨에 변화가 있을 때만 GUI 슬라이더 동기화
+        if vr.volume != last_vr_volume:
+            gui.slider_vol.set(vr.volume)
+            last_vr_volume = vr.volume
         
         # 4-3. GUI 텍스트 및 프로그레스 갱신 (기존 함수)
         original_refresh_ui_state()

@@ -22,42 +22,50 @@ class MusicPlayerGUI:
             style.theme_use('clam')
             
         style.configure('TLabel', background='#2b2b2b', foreground='#ffffff')
-        style.configure('TButton', background='#4a4a4a', foreground='#ffffff', font=('Arial', 10, 'bold'), padding=5)
+        style.configure('TButton', background='#4a4a4a', foreground='#ffffff', font=('Arial', 12, 'bold'), padding=5)
         style.map('TButton', background=[('active', '#5a5a5a')])
         
-        # 타이틀
-        self.lbl_title = ttk.Label(self.root, text='No Music', font=('Arial', 18, 'bold'))
-        self.lbl_title.pack(pady=20)
+        # 전체 레이아웃 구성을 위한 프레임 분리
+        main_frame = tk.Frame(self.root, bg='#2b2b2b')
+        main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # 시간 표시
-        self.lbl_time = ttk.Label(self.root, text='00:00', font=('Arial', 12))
+        # 좌측: 곡 정보 및 컨트롤
+        left_frame = tk.Frame(main_frame, bg='#2b2b2b')
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # 우측: 세로형 볼륨 슬라이더
+        vol_frame = tk.Frame(main_frame, bg='#2b2b2b')
+        vol_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=20, pady=20)
+        
+        # --- 좌측 곡 정보 영역 ---
+        self.lbl_title = ttk.Label(left_frame, text='No Music', font=('Arial', 18, 'bold'))
+        self.lbl_title.pack(pady=30)
+        
+        self.lbl_time = ttk.Label(left_frame, text='00:00', font=('Arial', 12))
         self.lbl_time.pack()
         
-        # 볼륨 조절부
-        vol_frame = tk.Frame(self.root, bg='#2b2b2b')
-        vol_frame.pack(pady=10)
-        
-        ttk.Label(vol_frame, text='Vol').pack(side=tk.LEFT, padx=5)
-        
-        self.slider_vol = ttk.Scale(vol_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=200, command=self._on_gui_volume_change)
-        self.slider_vol.set(50)
-        self.slider_vol.pack(side=tk.LEFT)
-        
-        # 컨트롤 버튼부
-        btn_frame = tk.Frame(self.root, bg='#2b2b2b')
+        # --- 좌측 컨트롤 버튼 영역 ---
+        btn_frame = tk.Frame(left_frame, bg='#2b2b2b')
         btn_frame.pack(pady=20)
         
-        self.btn_prev = ttk.Button(btn_frame, text='Prev', command=self._on_prev)
+        self.btn_prev = ttk.Button(btn_frame, text='<', command=self._on_prev, width=3)
         self.btn_prev.pack(side=tk.LEFT, padx=5)
         
-        self.btn_play = ttk.Button(btn_frame, text='Play/Pause', command=self._on_toggle_play)
+        self.btn_play = ttk.Button(btn_frame, text='▷', command=self._on_toggle_play, width=4)
         self.btn_play.pack(side=tk.LEFT, padx=5)
         
-        self.btn_next = ttk.Button(btn_frame, text='Next', command=self._on_next)
+        self.btn_next = ttk.Button(btn_frame, text='>', command=self._on_next, width=3)
         self.btn_next.pack(side=tk.LEFT, padx=5)
         
         self.btn_shuffle = ttk.Button(btn_frame, text='Shuffle', command=self._on_shuffle)
         self.btn_shuffle.pack(side=tk.LEFT, padx=5)
+        
+        # --- 우측 세로 볼륨 영역 ---
+        ttk.Label(vol_frame, text='Vol', font=('Arial', 10)).pack(side=tk.TOP, pady=5)
+        # 세로 슬라이더는 from_=100, to=0으로 해야 위로 올릴수록 볼륨이 커짐
+        self.slider_vol = ttk.Scale(vol_frame, from_=100, to=0, orient=tk.VERTICAL, length=140, command=self._on_gui_volume_change)
+        self.slider_vol.set(50)
+        self.slider_vol.pack(side=tk.TOP)
         
     def _on_toggle_play(self):
         self.player.toggle_play()
@@ -89,6 +97,12 @@ class MusicPlayerGUI:
         mins = secs // 60
         secs = secs % 60
         self.lbl_time.config(text=f"{mins:02d}:{secs:02d}")
+        
+        # 재생 상태에 따라 버튼 텍스트(아이콘) 동적 변경
+        if self.player.is_playing:
+            self.btn_play.config(text='||')
+        else:
+            self.btn_play.config(text='▷')
         
     def update_ui(self):
         """0.5초마다 주기적으로 UI 갱신 (tkinter의 after 함수 이용)"""
