@@ -1,5 +1,4 @@
 import tkinter as tk
-import queue
 
 from .hw.motor import MotorController
 from .hw.switch import SwitchController
@@ -28,49 +27,30 @@ def create_app():
     # GUI 인스턴스 생성 및 플레이어 주입
     gui = MusicPlayerGUI(root, player)
     
-    # 3. 하드웨어 스위치 입력 처리 (tkinter 스레드 충돌 방지를 위해 Queue 사용)
-    event_queue = queue.Queue()
+    # 3. 하드웨어 스위치/키패드 이벤트 바인딩 (Queue 대신 root.after를 이용해 즉각적인 스레드 안전 콜백 실행)
+    switch.register_callback(switch.SW1_PIN, lambda: root.after(0, gui._on_toggle_play))
+    switch.register_callback(switch.SW2_PIN, lambda: root.after(0, gui._on_prev))
+    switch.register_callback(switch.SW3_PIN, lambda: root.after(0, gui._on_next))
+    switch.register_callback(switch.SW4_PIN, lambda: root.after(0, gui._on_shuffle))
     
-    switch.register_callback(switch.SW1_PIN, lambda: event_queue.put('toggle'))
-    switch.register_callback(switch.SW2_PIN, lambda: event_queue.put('prev'))
-    switch.register_callback(switch.SW3_PIN, lambda: event_queue.put('next'))
-    switch.register_callback(switch.SW4_PIN, lambda: event_queue.put('shuffle'))
+    def on_keypad_press(key):
+        if hasattr(gui, 'keypad_app') and gui.keypad_app:
+            root.after(0, gui.keypad_app.highlight_button, key)
+            
+    def on_keypad_release(key):
+        if hasattr(gui, 'keypad_app') and gui.keypad_app:
+            root.after(0, gui.keypad_app.unhighlight_button, key)
+            
+    keypad.register_callback(on_keypad_press, on_keypad_release)
     
-    # 키패드 콜백 등록 (누름/뗌)
-    keypad.register_callback(
-        lambda key: event_queue.put(('keypad_press', key)),
-        lambda key: event_queue.put(('keypad_release', key))
-    )
-    
-    # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 및 큐 처리 로직 주입(Hook)
+    # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 로직 주입(Hook)
     original_refresh_ui_state = gui.refresh_ui_state
     last_vr_volume = vr.volume
     
     def hooked_refresh_ui_state():
         nonlocal last_vr_volume
-        # 4-1. 큐에 쌓인 스위치/키패드 이벤트 메인 스레드에서 처리
-        while not event_queue.empty():
-            item = event_queue.get()
-            if isinstance(item, tuple):
-                action, data = item
-                if action == 'keypad_press':
-                    if hasattr(gui, 'keypad_app') and gui.keypad_app:
-                        gui.keypad_app.highlight_button(data)
-                elif action == 'keypad_release':
-                    if hasattr(gui, 'keypad_app') and gui.keypad_app:
-                        gui.keypad_app.unhighlight_button(data)
-            else:
-                action = item
-                if action == 'toggle':
-                    gui._on_toggle_play()
-                elif action == 'prev':
-                    gui._on_prev()
-                elif action == 'next':
-                    gui._on_next()
-                elif action == 'shuffle':
-                    gui._on_shuffle()
                 
-        # 4-2. VR 볼륨에 변화가 있을 때만 GUI 슬라이더 동기화
+        # 4-1. VR 볼륨에 변화가 있을 때만 GUI 슬라이더 동기화
         if vr.volume != last_vr_volume:
             gui.slider_vol.set(vr.volume)
             last_vr_volume = vr.volume
