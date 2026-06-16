@@ -44,7 +44,27 @@ class MusicPlayer:
         self.start_time = 0
         self.pause_time = 0
         
+        self._load_pads()
+        
         self._initialized = True
+        
+    def _load_pads(self):
+        """pad1.wav ~ pad12.wav 오디오 파일을 병렬 재생용 Sound 객체로 로드합니다."""
+        self.pad_sounds = {}
+        for i in range(1, 13):
+            pad_file = os.path.join(self.audio_dir, f'pad{i}.wav')
+            if os.path.exists(pad_file):
+                try:
+                    self.pad_sounds[i] = pygame.mixer.Sound(pad_file)
+                except Exception as e:
+                    print(f"패드 음원 로드 실패 ({pad_file}): {e}")
+                    
+    def play_pad(self, pad_num):
+        """지정된 번호의 패드 사운드를 재생합니다. 동일 패드 재입력 시 처음부터 재생, 다른 패드는 동시 재생"""
+        if hasattr(self, 'pad_sounds') and pad_num in self.pad_sounds:
+            sound = self.pad_sounds[pad_num]
+            sound.stop()  # 재생 중인 동일 음원이 있다면 즉시 중단
+            sound.play()  # 빈 채널을 자동으로 찾아 오버랩 재생
         
     def _load_playlist(self):
         self.playlist = []

@@ -1,7 +1,8 @@
 import tkinter as tk
 
 class VirtualKeypadWindow:
-    def __init__(self, parent):
+    def __init__(self, parent, on_pad_press=None):
+        self.on_pad_press = on_pad_press
         self.window = tk.Toplevel(parent)
         self.window.title("Virtual Keypad")
         self.window.geometry("250x300")
@@ -11,9 +12,11 @@ class VirtualKeypadWindow:
         # 3열 4행의 서로 다른 색상 목록
         colors = ['red', 'green', 'dodger blue', 'orange', 'purple', 'cyan', 'magenta', 'yellow', 'pink', 'brown', 'lime green', 'teal']
         
-        def on_press(event, btn, color):
+        def on_press(event, btn, color, key_num):
             # 클릭 시 배경색과 activebackground(누르고 있을 때의 색상)를 모두 대상 색상으로 변경
             btn.config(bg=color, activebackground=color)
+            if self.on_pad_press:
+                self.on_pad_press(key_num)
             
         def on_release(event, btn):
             # 뗐을 때 다시 원래 색상으로 복구 (activebackground도 동일하게 맞춰 마우스 호버 효과 제거)
@@ -33,7 +36,7 @@ class VirtualKeypadWindow:
                 btn.grid(row=row, column=col, sticky='nsew', padx=5, pady=5)
                 
                 # 좌클릭 누름/뗌 이벤트 바인딩
-                btn.bind('<ButtonPress-1>', lambda e, b=btn, c=btn_color: on_press(e, b, c))
+                btn.bind('<ButtonPress-1>', lambda e, b=btn, c=btn_color, k=key_num: on_press(e, b, c, k))
                 btn.bind('<ButtonRelease-1>', lambda e, b=btn: on_release(e, b))
                 
                 # 외부 하드웨어 이벤트 제어를 위해 딕셔너리에 저장

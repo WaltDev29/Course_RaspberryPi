@@ -115,7 +115,7 @@ class MusicPlayerGUI:
             return
             
         # 별도 파일로 분리된 VirtualKeypadWindow 클래스 인스턴스화
-        self.keypad_app = VirtualKeypadWindow(self.root)
+        self.keypad_app = VirtualKeypadWindow(self.root, on_pad_press=self.player.play_pad)
 
     def refresh_ui_state(self):
         """UI 컴포넌트들의 상태를 현재 플레이어 상태에 맞게 갱신"""

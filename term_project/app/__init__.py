@@ -34,6 +34,8 @@ def create_app():
     switch.register_callback(switch.SW4_PIN, lambda: root.after(0, gui._on_shuffle))
     
     def on_keypad_press(key):
+        # 하드웨어 키패드 입력 시: 오디오 재생 + GUI 하이라이트 동시 수행
+        player.play_pad(key)
         if hasattr(gui, 'keypad_app') and gui.keypad_app:
             root.after(0, gui.keypad_app.highlight_button, key)
             
