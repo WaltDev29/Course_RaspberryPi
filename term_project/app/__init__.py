@@ -6,6 +6,7 @@ from .hw_switch import SwitchController
 from .hw_led import LEDController
 from .hw_lcd import LCDController
 from .hw_vr import VRController
+from .hw_keypad import KeypadController
 from .player import MusicPlayer
 from .gui import MusicPlayerGUI
 
@@ -21,6 +22,7 @@ def create_app():
     led = LEDController()
     lcd = LCDController()
     vr = VRController()
+    keypad = KeypadController()
     player = MusicPlayer()
     
     # GUI 인스턴스 생성 및 플레이어 주입
@@ -34,23 +36,39 @@ def create_app():
     switch.register_callback(switch.SW3_PIN, lambda: event_queue.put('next'))
     switch.register_callback(switch.SW4_PIN, lambda: event_queue.put('shuffle'))
     
+    # 키패드 콜백 등록 (누름/뗌)
+    keypad.register_callback(
+        lambda key: event_queue.put(('keypad_press', key)),
+        lambda key: event_queue.put(('keypad_release', key))
+    )
+    
     # 4. GUI 타이머 루프에 하드웨어 출력 상태 동기화 및 큐 처리 로직 주입(Hook)
     original_refresh_ui_state = gui.refresh_ui_state
     last_vr_volume = vr.volume
     
     def hooked_refresh_ui_state():
         nonlocal last_vr_volume
-        # 4-1. 큐에 쌓인 스위치 인터럽트 이벤트 메인 스레드에서 처리
+        # 4-1. 큐에 쌓인 스위치/키패드 이벤트 메인 스레드에서 처리
         while not event_queue.empty():
-            action = event_queue.get()
-            if action == 'toggle':
-                gui._on_toggle_play()
-            elif action == 'prev':
-                gui._on_prev()
-            elif action == 'next':
-                gui._on_next()
-            elif action == 'shuffle':
-                gui._on_shuffle()
+            item = event_queue.get()
+            if isinstance(item, tuple):
+                action, data = item
+                if action == 'keypad_press':
+                    if hasattr(gui, 'keypad_app') and gui.keypad_app:
+                        gui.keypad_app.highlight_button(data)
+                elif action == 'keypad_release':
+                    if hasattr(gui, 'keypad_app') and gui.keypad_app:
+                        gui.keypad_app.unhighlight_button(data)
+            else:
+                action = item
+                if action == 'toggle':
+                    gui._on_toggle_play()
+                elif action == 'prev':
+                    gui._on_prev()
+                elif action == 'next':
+                    gui._on_next()
+                elif action == 'shuffle':
+                    gui._on_shuffle()
                 
         # 4-2. VR 볼륨에 변화가 있을 때만 GUI 슬라이더 동기화
         if vr.volume != last_vr_volume:
@@ -92,4 +110,8 @@ def cleanup_app():
     
     try:
         MusicPlayer().cleanup()
+    except: pass
+    
+    try:
+        KeypadController().cleanup()
     except: pass
