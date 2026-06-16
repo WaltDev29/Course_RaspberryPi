@@ -1,12 +1,12 @@
 import tkinter as tk
 import queue
 
-from .hw_motor import MotorController
-from .hw_switch import SwitchController
-from .hw_led import LEDController
-from .hw_lcd import LCDController
-from .hw_vr import VRController
-from .hw_keypad import KeypadController
+from .hw.motor import MotorController
+from .hw.switch import SwitchController
+from .hw.led import LEDController
+from .hw.lcd import LCDController
+from .hw.vr import VRController
+from .hw.keypad import KeypadController
 from .player import MusicPlayer
 from .gui import MusicPlayerGUI
 
