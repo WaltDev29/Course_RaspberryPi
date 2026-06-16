@@ -149,3 +149,13 @@ class MusicPlayer:
         if self.is_paused:
             return self.pause_time - self.start_time
         return time.time() - self.start_time
+        
+    def cleanup(self):
+        """플레이어 정지 및 믹서 메모리 해제"""
+        self.is_playing = False
+        self.is_paused = False
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.quit()
+        except:
+            pass

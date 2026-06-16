@@ -53,6 +53,9 @@ class MotorController:
         for pin in self.pinsArray:
             GPIO.output(pin, GPIO.LOW)
             
+    def cleanup(self):
+        self.stop()
+            
     def _motor_loop(self):
         """백그라운드 스텝 모터 회전 루프"""
         while True:

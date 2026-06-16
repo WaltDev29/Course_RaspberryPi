@@ -39,6 +39,9 @@ class LEDController:
             # 정지 시 LED 소등
             self.bus.write_byte(self.addr, 0)
             
+    def cleanup(self):
+        self.set_playing(False)
+            
     def _led_loop(self):
         """백그라운드에서 동작하는 LED 순차 점멸 루프"""
         color_idx = 0

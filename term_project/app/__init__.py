@@ -75,3 +75,21 @@ def create_app():
     gui.refresh_ui_state = hooked_refresh_ui_state
     
     return root, gui
+
+def cleanup_app():
+    """종료 시 모든 싱글톤 객체들의 하드웨어/메모리 자원을 안전하게 해제합니다."""
+    try:
+        MotorController().cleanup()
+    except: pass
+    
+    try:
+        LEDController().cleanup()
+    except: pass
+    
+    try:
+        LCDController().cleanup()
+    except: pass
+    
+    try:
+        MusicPlayer().cleanup()
+    except: pass

@@ -39,6 +39,10 @@ class LCDController:
     def set_playing(self, playing):
         """재생 상태 설정"""
         self.is_playing = playing
+        
+    def cleanup(self):
+        self.is_playing = False
+        self.lcd.lcd_clear()
             
     def _scroll_loop(self):
         """백그라운드 스크롤 루프"""
