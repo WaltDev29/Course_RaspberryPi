@@ -8,6 +8,7 @@ class MusicPlayerGUI:
         self.root = root
         self.player = player
         
+        self.after_id = None
         self.initUI()
         
         # 주기적 UI 갱신 (500ms 단위)
@@ -15,6 +16,7 @@ class MusicPlayerGUI:
         
     def initUI(self):
         self.root.title('Raspberry Pi Music Player')
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.geometry('450x250')
         self.root.configure(bg='#2b2b2b')
         
@@ -123,5 +125,17 @@ class MusicPlayerGUI:
         
     def update_ui(self):
         """0.5초마다 주기적으로 UI 갱신 (tkinter의 after 함수 이용)"""
-        self.refresh_ui_state()
-        self.root.after(500, self.update_ui)
+        try:
+            self.refresh_ui_state()
+            self.after_id = self.root.after(500, self.update_ui)
+        except tk.TclError:
+            pass
+            
+    def on_closing(self):
+        """창을 닫을 때 예약된 타이머를 안전하게 취소하고 창을 파괴합니다."""
+        if self.after_id:
+            try:
+                self.root.after_cancel(self.after_id)
+            except Exception:
+                pass
+        self.root.destroy()
