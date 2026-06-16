@@ -60,6 +60,19 @@ class MusicPlayer:
         base_name = os.path.basename(self.playlist[self.current_index])
         return os.path.splitext(base_name)[0]
         
+    def add_and_play(self, filepath):
+        """외부에서 파일을 직접 선택했을 때 플레이리스트에 추가하고 즉시 재생"""
+        if filepath not in self.playlist:
+            self.playlist.append(filepath)
+        self.current_index = self.playlist.index(filepath)
+        self.is_paused = False
+        
+        # 새로 선택한 곡이므로 강제로 다시 로드하기 위해 pause 초기화
+        pygame.mixer.music.load(filepath)
+        pygame.mixer.music.play()
+        self.is_playing = True
+        self.start_time = time.time()
+        
     def play(self):
         if not self.playlist:
             return

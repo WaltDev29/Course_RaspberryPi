@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
+import os
 
 class MusicPlayerGUI:
     def __init__(self, root, player):
@@ -37,9 +39,15 @@ class MusicPlayerGUI:
         vol_frame = tk.Frame(main_frame, bg='#2b2b2b')
         vol_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=20, pady=20)
         
+        # --- 좌측 최상단 파일 선택 영역 ---
+        top_frame = tk.Frame(left_frame, bg='#2b2b2b')
+        top_frame.pack(fill=tk.X, pady=5, padx=10)
+        self.btn_open = ttk.Button(top_frame, text='Open File', command=self._on_open_file)
+        self.btn_open.pack(side=tk.LEFT)
+        
         # --- 좌측 곡 정보 영역 ---
         self.lbl_title = ttk.Label(left_frame, text='No Music', font=('Arial', 18, 'bold'))
-        self.lbl_title.pack(pady=30)
+        self.lbl_title.pack(pady=15)
         
         self.lbl_time = ttk.Label(left_frame, text='00:00', font=('Arial', 12))
         self.lbl_time.pack()
@@ -85,6 +93,15 @@ class MusicPlayerGUI:
         
     def _on_gui_volume_change(self, val):
         self.player.set_volume(float(val))
+        
+    def _on_open_file(self):
+        filepath = filedialog.askopenfilename(
+            title="Select Music File",
+            filetypes=[("Audio Files", "*.mp3 *.wav"), ("All Files", "*.*")]
+        )
+        if filepath:
+            self.player.add_and_play(filepath)
+            self.refresh_ui_state()
         
     def refresh_ui_state(self):
         """UI 컴포넌트들의 상태를 현재 플레이어 상태에 맞게 갱신"""
