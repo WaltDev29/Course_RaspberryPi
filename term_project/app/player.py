@@ -70,7 +70,7 @@ class MusicPlayer:
         self.playlist = []
         if os.path.exists(self.audio_dir):
             for f in os.listdir(self.audio_dir):
-                if f.endswith('.wav') or f.endswith('.mp3'):
+                if (f.endswith('.wav') or f.endswith('.mp3')) and not f.startswith('pad'):
                     self.playlist.append(os.path.join(self.audio_dir, f))
         self.playlist.sort()
         
@@ -160,7 +160,11 @@ class MusicPlayer:
         
     def set_volume(self, volume_percent):
         """0 ~ 100 퍼센트 볼륨 설정"""
-        pygame.mixer.music.set_volume(volume_percent / 100.0)
+        vol = volume_percent / 100.0
+        pygame.mixer.music.set_volume(vol)
+        if hasattr(self, 'pad_sounds'):
+            for sound in self.pad_sounds.values():
+                sound.set_volume(vol)
         
     def get_progress(self):
         """현재 곡 진행 시간(초) 반환"""
